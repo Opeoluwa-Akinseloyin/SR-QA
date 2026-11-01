@@ -90,8 +90,8 @@ as an exact phrase, through all of its numbers, or through most of its content w
 
 ## 4. Checking the LLM judge (Sect. 7)
 
-- Second judge: Claude Sonnet 5.5 re-judged the answers of four models on
-  100 test-2026 papers.
+- Second judge: Claude Sonnet 5.5 re-judged the answers of four models (DeepSeek
+  V3.2, Gemma 4, GLM-5, Qwen3.5-27B) on 100 test-2026 papers.
 - Correctness: the two judges agree on 93.9-95.4% of verdicts.
   There is no same-lab (Google) advantage for Gemma: +0.3 points, [−1.9, +3.0].
 - Faithfulness: the Claude judge is far more lenient (95.1-96.5%
@@ -148,6 +148,10 @@ Why items are left out, over all 166,308 items:
 | Yes/no gold | 2,314 | 1.4 |
 | No letter or digit | 1,328 | 0.8 |
 
+On test-2026, a query has a median of 2 relevant passages (mean
+3.1; a table value counts as both its row and its cell), and
+30.6% of queries have exactly one.
+
 Labelled items against the other items with a gold value. Where the best evidence (the
 highest-graded relevant passage) sits is known only for labelled items.
 
@@ -177,3 +181,133 @@ These causes were not checked by hand.
 - LEADSInstruct's size counts its four extraction subsets, not its screening and search
   instructions. It releases full text for part of three extraction subsets, and titles
   with abstracts otherwise.
+
+## 10. Pairwise significance tests (Sect. 6 and 7)
+
+Each row compares two systems on test-2026, higher-scoring first. The difference is
+paired: in each of 2,000 bootstrap replicates both systems are scored on the same
+resampled reviews. The 95% interval is the percentile interval of the replicate
+differences; p is two-sided and Holm-adjusted within each table, and "significant"
+means an adjusted p below 0.05. With 2,000 replicates, p cannot be resolved below
+0.001. The other retrieval metrics are in `data/v2/analysis/retrieval_results.json` in
+the release.
+
+**Retrieval, Success@10** (15 pairs of runs; difference in Success@10)
+
+| Higher | Lower | Difference (Success@10) | 95% interval | Holm p | Significant |
+|---|---|---|---|---|---|
+| BGE-M3 → rerank | BM25 | 0.270 | [0.251, 0.290] | <0.001 | yes |
+| BGE-M3 → rerank | MedCPT | 0.218 | [0.197, 0.237] | <0.001 | yes |
+| BGE-M3 → rerank | BM25 + MedCPT | 0.199 | [0.175, 0.219] | <0.001 | yes |
+| BGE-M3 | BM25 | 0.169 | [0.150, 0.190] | <0.001 | yes |
+| BGE-M3 → rerank | BM25 + BGE-M3 | 0.147 | [0.133, 0.162] | <0.001 | yes |
+| BM25 + BGE-M3 | BM25 | 0.122 | [0.110, 0.137] | <0.001 | yes |
+| BGE-M3 | MedCPT | 0.118 | [0.098, 0.136] | <0.001 | yes |
+| BGE-M3 → rerank | BGE-M3 | 0.100 | [0.088, 0.111] | <0.001 | yes |
+| BGE-M3 | BM25 + MedCPT | 0.099 | [0.076, 0.118] | <0.001 | yes |
+| BM25 + MedCPT | BM25 | 0.071 | [0.055, 0.090] | <0.001 | yes |
+| BM25 + BGE-M3 | MedCPT | 0.070 | [0.052, 0.089] | <0.001 | yes |
+| MedCPT | BM25 | 0.052 | [0.031, 0.073] | <0.001 | yes |
+| BM25 + BGE-M3 | BM25 + MedCPT | 0.051 | [0.033, 0.066] | <0.001 | yes |
+| BGE-M3 | BM25 + BGE-M3 | 0.047 | [0.035, 0.059] | <0.001 | yes |
+| BM25 + MedCPT | MedCPT | 0.019 | [0.005, 0.031] | 0.007 | yes |
+
+**Grounded answering, faithfulness** (45 pairs of models; difference in percentage points)
+
+| Higher | Lower | Difference (points) | 95% interval | Holm p | Significant |
+|---|---|---|---|---|---|
+| Gemma 4 31B | Qwen3.5-9B | 19.6 | [17.5, 21.9] | <0.001 | yes |
+| Gemma 4 31B | Llama 4 Scout | 16.9 | [14.0, 19.8] | <0.001 | yes |
+| DeepSeek V3.2 | Qwen3.5-9B | 15.5 | [13.0, 17.9] | <0.001 | yes |
+| GLM-5 | Qwen3.5-9B | 14.7 | [12.2, 17.3] | <0.001 | yes |
+| DeepSeek V3.2 | Llama 4 Scout | 12.9 | [10.1, 15.8] | <0.001 | yes |
+| Gemma 4 31B | Qwen3.5-35B-A3B | 12.8 | [10.9, 14.8] | <0.001 | yes |
+| Gemma 4 31B | Llama 4 Maverick | 12.7 | [10.3, 15.1] | <0.001 | yes |
+| Gemma 4 31B | Qwen3.5-122B-A10B | 11.8 | [9.6, 14.2] | <0.001 | yes |
+| GLM-5 | Llama 4 Scout | 11.6 | [7.8, 15.2] | <0.001 | yes |
+| Qwen3.5-397B-A17B | Qwen3.5-9B | 10.5 | [7.8, 13.1] | <0.001 | yes |
+| Qwen3.5-27B | Qwen3.5-9B | 10.3 | [8.1, 12.5] | <0.001 | yes |
+| Gemma 4 31B | Qwen3.5-27B | 9.3 | [7.4, 11.2] | <0.001 | yes |
+| DeepSeek V3.2 | Llama 4 Maverick | 8.7 | [6.5, 11.0] | <0.001 | yes |
+| Gemma 4 31B | Qwen3.5-397B-A17B | 8.6 | [6.6, 10.6] | <0.001 | yes |
+| DeepSeek V3.2 | Qwen3.5-35B-A3B | 8.6 | [6.4, 10.8] | <0.001 | yes |
+| GLM-5 | Qwen3.5-35B-A3B | 8.1 | [6.0, 10.3] | <0.001 | yes |
+| Qwen3.5-397B-A17B | Llama 4 Scout | 7.9 | [4.5, 11.3] | <0.001 | yes |
+| GLM-5 | Llama 4 Maverick | 7.9 | [5.4, 10.4] | <0.001 | yes |
+| Qwen3.5-122B-A10B | Qwen3.5-9B | 7.8 | [5.1, 10.4] | <0.001 | yes |
+| DeepSeek V3.2 | Qwen3.5-122B-A10B | 7.4 | [4.7, 10.0] | <0.001 | yes |
+| Llama 4 Maverick | Qwen3.5-9B | 7.4 | [4.6, 10.1] | <0.001 | yes |
+| Qwen3.5-27B | Llama 4 Scout | 7.3 | [3.9, 10.8] | <0.001 | yes |
+| GLM-5 | Qwen3.5-122B-A10B | 7.0 | [4.6, 9.2] | <0.001 | yes |
+| Qwen3.5-35B-A3B | Qwen3.5-9B | 6.6 | [4.3, 9.1] | <0.001 | yes |
+| DeepSeek V3.2 | Qwen3.5-27B | 5.0 | [3.0, 6.9] | <0.001 | yes |
+| Gemma 4 31B | GLM-5 | 4.9 | [3.0, 6.8] | <0.001 | yes |
+| GLM-5 | Qwen3.5-397B-A17B | 4.5 | [2.4, 6.7] | <0.001 | yes |
+| GLM-5 | Qwen3.5-27B | 4.4 | [2.4, 6.5] | <0.001 | yes |
+| Gemma 4 31B | DeepSeek V3.2 | 4.0 | [2.2, 5.6] | <0.001 | yes |
+| Qwen3.5-397B-A17B | Qwen3.5-35B-A3B | 3.7 | [1.4, 6.0] | <0.001 | yes |
+| DeepSeek V3.2 | Qwen3.5-397B-A17B | 4.3 | [1.9, 6.7] | 0.015 | yes |
+| Qwen3.5-27B | Qwen3.5-35B-A3B | 3.2 | [1.4, 5.0] | 0.028 | yes |
+| Qwen3.5-27B | Llama 4 Maverick | 3.4 | [0.9, 5.9] | 0.104 | no |
+| Qwen3.5-397B-A17B | Llama 4 Maverick | 3.8 | [1.0, 6.4] | 0.108 | no |
+| Qwen3.5-122B-A10B | Llama 4 Scout | 4.8 | [0.8, 8.6] | 0.198 | no |
+| Llama 4 Scout | Qwen3.5-9B | 4.0 | [0.7, 7.3] | 0.198 | no |
+| Qwen3.5-397B-A17B | Qwen3.5-122B-A10B | 2.7 | [0.5, 5.1] | 0.198 | no |
+| Llama 4 Maverick | Llama 4 Scout | 3.5 | [0.1, 6.7] | 0.360 | no |
+| Qwen3.5-27B | Qwen3.5-122B-A10B | 2.1 | [−0.1, 4.4] | 0.385 | no |
+| Qwen3.5-35B-A3B | Llama 4 Scout | 3.4 | [−0.3, 6.9] | 0.408 | no |
+| Qwen3.5-122B-A10B | Qwen3.5-35B-A3B | 0.9 | [−1.4, 3.2] | 1.000 | no |
+| Qwen3.5-122B-A10B | Llama 4 Maverick | 0.8 | [−2.1, 3.6] | 1.000 | no |
+| DeepSeek V3.2 | GLM-5 | 0.7 | [−1.5, 2.9] | 1.000 | no |
+| Qwen3.5-397B-A17B | Qwen3.5-27B | 0.2 | [−2.0, 2.4] | 1.000 | no |
+| Qwen3.5-35B-A3B | Llama 4 Maverick | 0.0 | [−2.5, 2.7] | 1.000 | no |
+
+**Grounded answering, correctness** (45 pairs of models; difference in percentage points)
+
+| Higher | Lower | Difference (points) | 95% interval | Holm p | Significant |
+|---|---|---|---|---|---|
+| Qwen3.5-397B-A17B | Llama 4 Scout | 12.5 | [10.8, 14.4] | <0.001 | yes |
+| Qwen3.5-35B-A3B | Llama 4 Scout | 11.8 | [10.0, 13.5] | <0.001 | yes |
+| Qwen3.5-27B | Llama 4 Scout | 11.8 | [9.8, 13.8] | <0.001 | yes |
+| DeepSeek V3.2 | Llama 4 Scout | 11.3 | [9.5, 13.1] | <0.001 | yes |
+| Qwen3.5-122B-A10B | Llama 4 Scout | 10.9 | [8.9, 12.8] | <0.001 | yes |
+| GLM-5 | Llama 4 Scout | 10.7 | [8.9, 12.5] | <0.001 | yes |
+| Gemma 4 31B | Llama 4 Scout | 9.1 | [7.2, 11.1] | <0.001 | yes |
+| Qwen3.5-9B | Llama 4 Scout | 8.3 | [6.5, 10.0] | <0.001 | yes |
+| Llama 4 Maverick | Llama 4 Scout | 7.1 | [5.3, 9.0] | <0.001 | yes |
+| Qwen3.5-397B-A17B | Llama 4 Maverick | 5.9 | [4.4, 7.4] | <0.001 | yes |
+| Qwen3.5-35B-A3B | Llama 4 Maverick | 4.9 | [3.7, 6.2] | <0.001 | yes |
+| Qwen3.5-27B | Llama 4 Maverick | 4.7 | [3.3, 6.0] | <0.001 | yes |
+| Qwen3.5-397B-A17B | Qwen3.5-9B | 4.2 | [2.7, 5.8] | <0.001 | yes |
+| DeepSeek V3.2 | Llama 4 Maverick | 4.1 | [2.2, 5.7] | <0.001 | yes |
+| Qwen3.5-397B-A17B | Gemma 4 31B | 4.0 | [2.9, 5.4] | <0.001 | yes |
+| Qwen3.5-122B-A10B | Llama 4 Maverick | 3.9 | [2.4, 5.3] | <0.001 | yes |
+| GLM-5 | Llama 4 Maverick | 3.3 | [2.0, 4.6] | <0.001 | yes |
+| Qwen3.5-35B-A3B | Qwen3.5-9B | 3.2 | [1.9, 4.6] | <0.001 | yes |
+| Qwen3.5-27B | Qwen3.5-9B | 3.1 | [1.7, 4.5] | <0.001 | yes |
+| Qwen3.5-35B-A3B | Gemma 4 31B | 2.9 | [1.7, 4.2] | <0.001 | yes |
+| Qwen3.5-397B-A17B | GLM-5 | 2.8 | [1.6, 4.2] | <0.001 | yes |
+| Qwen3.5-27B | Gemma 4 31B | 2.7 | [1.6, 3.9] | <0.001 | yes |
+| Qwen3.5-122B-A10B | Qwen3.5-9B | 2.5 | [1.1, 4.1] | <0.001 | yes |
+| DeepSeek V3.2 | Qwen3.5-9B | 2.5 | [1.1, 4.0] | 0.044 | yes |
+| Qwen3.5-35B-A3B | GLM-5 | 1.7 | [0.5, 2.9] | 0.084 | no |
+| Qwen3.5-397B-A17B | Qwen3.5-122B-A10B | 2.0 | [0.7, 3.3] | 0.100 | no |
+| Qwen3.5-397B-A17B | Qwen3.5-27B | 1.5 | [0.4, 2.5] | 0.100 | no |
+| Qwen3.5-122B-A10B | Gemma 4 31B | 1.9 | [0.5, 3.4] | 0.126 | no |
+| Qwen3.5-9B | Llama 4 Maverick | 1.9 | [0.3, 3.4] | 0.187 | no |
+| Gemma 4 31B | Llama 4 Maverick | 1.7 | [0.4, 3.0] | 0.192 | no |
+| GLM-5 | Qwen3.5-9B | 1.8 | [0.2, 3.4] | 0.375 | no |
+| Qwen3.5-27B | GLM-5 | 1.3 | [0.1, 2.4] | 0.375 | no |
+| GLM-5 | Gemma 4 31B | 1.4 | [0.2, 2.6] | 0.390 | no |
+| DeepSeek V3.2 | Gemma 4 31B | 2.1 | [0.2, 3.8] | 0.408 | no |
+| Qwen3.5-397B-A17B | DeepSeek V3.2 | 1.2 | [0.1, 2.4] | 0.408 | no |
+| Qwen3.5-397B-A17B | Qwen3.5-35B-A3B | 0.9 | [−0.1, 2.0] | 0.970 | no |
+| DeepSeek V3.2 | GLM-5 | 0.9 | [−0.9, 2.5] | 1.000 | no |
+| Qwen3.5-35B-A3B | Qwen3.5-122B-A10B | 0.9 | [−0.3, 2.1] | 1.000 | no |
+| Qwen3.5-35B-A3B | DeepSeek V3.2 | 0.8 | [−0.6, 2.4] | 1.000 | no |
+| Qwen3.5-122B-A10B | GLM-5 | 0.6 | [−0.7, 2.0] | 1.000 | no |
+| Qwen3.5-27B | Qwen3.5-122B-A10B | 0.6 | [−0.6, 1.7] | 1.000 | no |
+| Gemma 4 31B | Qwen3.5-9B | 0.5 | [−1.0, 2.1] | 1.000 | no |
+| Qwen3.5-35B-A3B | Qwen3.5-27B | 0.4 | [−0.6, 1.4] | 1.000 | no |
+| Qwen3.5-27B | DeepSeek V3.2 | 0.4 | [−1.0, 2.1] | 1.000 | no |
+| DeepSeek V3.2 | Qwen3.5-122B-A10B | 0.1 | [−1.8, 1.7] | 1.000 | no |
