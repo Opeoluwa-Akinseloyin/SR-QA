@@ -1,0 +1,17 @@
+# credentials: never commit
+.env
+.env.local
+
+# data: downloaded from the Zenodo deposit, not kept in git
+release/
+data/
+SOURCE_XML/
+PMC_XML_/
+
+# Python and editors
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.vscode/
+.idea/
